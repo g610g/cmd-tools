@@ -6,18 +6,18 @@ use std::{collections::VecDeque, error::Error, fs, io, path::{PathBuf}, process}
 struct Arg{
     #[arg(long, default_value_t = String::from("."))]
     ls:String,
-    #[clap(long, short)]
+    #[arg(long, short, default_value_t= String::from("test.txt"))]
     ///File name to be searched
     filename:String,
 
-    #[clap(long, short)]
+    #[clap(long, short, default_value_t= String::from("test.txt"))]
     ///The start directory
     directory:String,
     #[arg(short, long, action = clap::ArgAction::Count)]
     /// test count for count option of arguments
     count:u8,
     #[command(subcommand)]
-    command:Commands
+    command:Option<Commands>
 }
 #[derive(Subcommand, Debug)]
 enum Commands{
@@ -28,20 +28,22 @@ enum Commands{
 struct AddArgs{
     name:Option<String>,
 }
-fn validate(){
 
-}
-fn list_direc(args: &Arg)-> Result<(),  io::Error>{
+fn list_direc(args: &Arg)-> Result<(),  Box<dyn Error>>{
     if args.ls.len() != 0 {
         let directories_iter = fs::read_dir(args.ls.clone())?;
         directories_iter.for_each(|d| {
             match d {
-                Ok(entry) => {println!("{:?}", entry.path())},
-                Err(e) => println!("Error: {}", e)
+                Ok(entry) => {
+                    let path_buf = entry.path();
+                    let os_string = path_buf.into_os_string();
+                    let name = os_string.into_string().unwrap();
+                    println!("{name}");
+                },
+                Err(e) => {println!("Error: {}", e)}
             }
         });
     }
-    
     Ok(())
 }
 
@@ -75,20 +77,20 @@ fn find(args: &Arg) -> Result<(), Box<dyn Error>>{
 }
 fn main() {
     let args = Arg::parse();     
-    // if let Err(e) = list_direc(&args){
-    //     println!("Error: {}", e);
-    //     process::exit(1);
-    // }
-    match &args.command{
-        Commands::Add(args) => {
-            if let Some(name) = args.name.as_ref(){
-                println!("Name: {}", name);
-            }
-           
-        }
-    }
-    if let Err(e) = find(&args){
+    if let Err(e) = list_direc(&args){
         println!("Error: {}", e);
         process::exit(1);
     }
+    // match &args.command{
+    //     Commands::Add(args) => {
+    //         if let Some(name) = args.name.as_ref(){
+    //             println!("Name: {}", name);
+    //         }
+           
+    //     }
+    // }
+    // if let Err(e) = find(&args){
+    //     println!("Error: {}", e);
+    //     process::exit(1);
+    // }
 }
