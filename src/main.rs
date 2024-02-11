@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand, Args};
 use std::{collections::VecDeque, error::Error, fs, io, path::{PathBuf}, process};
+use cli_clipboard::{ClipboardContext, ClipboardProvider};
 #[derive(Parser, Debug)]
 #[command(version, about = "A basic cli-tools" , name = "cli-tools", long_about = None)]
 #[command(propagate_version = true)]
@@ -10,12 +11,14 @@ struct Arg{
     ///File name to be searched
     filename:String,
 
+    #[arg(long, short, default_value_t = false)]
+    clip:bool,
     #[clap(long, short, default_value_t= String::from("test.txt"))]
     ///The start directory
     directory:String,
-    #[arg(short, long, action = clap::ArgAction::Count)]
+    // #[arg(short, long, action = clap::ArgAction::Count)]
     /// test count for count option of arguments
-    count:u8,
+    // count:u8,
     #[command(subcommand)]
     command:Option<Commands>
 }
@@ -75,11 +78,26 @@ fn find(args: &Arg) -> Result<(), Box<dyn Error>>{
     }
     Ok(())
 }
+//copies the contents of the file a rust tool
+fn clip(args: &Arg) -> Result<(String), Box<dyn Error>>{
+    //initialize clipboard
+    let mut ctx = ClipboardContext::new()?;
+    let contents = fs::read_to_string(args.filename.clone())?;
+    ctx.set_contents(contents)?;
+    let string = ctx.get_contents()?;
+    Ok(string)
+}
+//concatenates two files must check if given filename is a file and also concatenates the content of the file and put into existing one
+fn cat() -> Result<(), Box<dyn Error>>{
+    Ok(())
+}
 fn main() {
     let args = Arg::parse();     
-    if let Err(e) = list_direc(&args){
+    if let Err(e) = clip(&args){
         println!("Error: {}", e);
         process::exit(1);
+    }else{
+        println!("Contents copied into clipboard!");
     }
     // match &args.command{
     //     Commands::Add(args) => {
